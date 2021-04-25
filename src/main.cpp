@@ -11,10 +11,12 @@
 
 #define MODE_MIC 0
 #define MODE_SPK 1
-#define DATA_SIZE 1024
+#define DATA_SIZE 1024/2
 
-uint8_t microphonedata0[1024 * 80];
+uint8_t microphonedata0[1024 * 100];
+
 int data_offset = 0;
+
 
 void InitI2SSpeakerOrMic(int mode)
 {
@@ -57,12 +59,16 @@ void InitI2SSpeakerOrMic(int mode)
 }
 
 void setup() {
+    Serial.begin(115200);
     M5.begin(true, false, true);
-    M5.dis.drawpix(0, CRGB(128, 128, 0));
+    M5.dis.drawpix(0, CRGB(250, 128, 250));
     delay(2000);
 }
 
 void loop() {
+    int i=0;
+    uint8_t* microRawData = (uint8_t*)calloc(DATA_SIZE,sizeof(uint8_t));
+    int16_t* buffptr;
     if (M5.Btn.isPressed())
     {
         data_offset = 0;
@@ -72,8 +78,21 @@ void loop() {
         
         while (1)
         {
-            i2s_read(SPEAKER_I2S_NUMBER, (char *)(microphonedata0 + data_offset), DATA_SIZE, &byte_read, (100 / portTICK_RATE_MS));
-            data_offset += 1024;
+            //int val=i2s_read(SPEAKER_I2S_NUMBER, (char *)(microphonedata0 + data_offset), DATA_SIZE, &byte_read, (100 / portTICK_RATE_MS));
+            //data_offset += 1024;
+            int val=i2s_read(SPEAKER_I2S_NUMBER, (char *)microRawData, DATA_SIZE, &byte_read, (100 / portTICK_RATE_MS));
+            buffptr = ( int16_t*)microRawData;
+            /*
+            the problem of the i2s reboot is understand
+            since it reach the maximu of mivroRawDara
+            to check how to use the external RAM to store these data
+            example: https://github.com/m5stack/M5-ProductExampleCodes/blob/master/Unit/PDM/PDM.ino
+            */
+
+
+            data_offset += DATA_SIZE;
+            Serial.println(val+i);
+            i++;
             M5.update();
             if (M5.Btn.isReleased())
                 break;
